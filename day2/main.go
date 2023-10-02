@@ -30,10 +30,10 @@ var shapes = map[string]int{
 
 func getRoundPoints(opponentShape int, playerShape int) int {
 	var outcome int
-	isDifferenceWinning := math.Abs(float64(playerShape)-float64(opponentShape)) == 1
+	isDifferenceValid := math.Abs(float64(playerShape)-float64(opponentShape)) == 1
 	if opponentShape == playerShape {
 		outcome = Draw
-	} else if playerShape > opponentShape && isDifferenceWinning || opponentShape > playerShape && !isDifferenceWinning {
+	} else if playerShape > opponentShape && isDifferenceValid || opponentShape > playerShape && !isDifferenceValid {
 		outcome = Win
 	} else {
 		outcome = Lose
@@ -74,18 +74,17 @@ func main() {
 	// part 1
 	var total1 int
 	for _, round := range rounds {
-		playersShapes := strings.Fields(round)
-		points := getRoundPoints(shapes[playersShapes[0]], shapes[playersShapes[1]])
-		total1 += points
+		roundShapes := strings.Fields(round)
+		total1 += getRoundPoints(shapes[roundShapes[0]], shapes[roundShapes[1]])
 	}
 	fmt.Println(total1)
 
 	// part 2
 	var total2 int
 	for _, round := range rounds {
-		playerShapes := strings.Fields(round)
-		decryptedShape := mustDecryptShape(shapes[playerShapes[0]], playerShapes[1])
-		total2 += getRoundPoints(shapes[playerShapes[0]], decryptedShape)
+		roundShapes := strings.Fields(round)
+		decryptedShape := mustDecryptShape(shapes[roundShapes[0]], roundShapes[1])
+		total2 += getRoundPoints(shapes[roundShapes[0]], decryptedShape)
 	}
 	fmt.Println(total2)
 }
