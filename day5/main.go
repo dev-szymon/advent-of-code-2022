@@ -5,11 +5,10 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode"
-
-	"golang.org/x/exp/slices"
 )
 
 type Stacks [][]string
