@@ -130,10 +130,11 @@ func newKnot(id int, p Position, prev, next *Knot) *Knot {
 	}
 }
 
-func prepare(count int, startingPosition Position) *Knot {
+func prepare(knots int) *Knot {
+	startingPosition := Position{initialY, initialX}
 	head := newKnot(0, startingPosition, nil, nil)
 	curr := head
-	for i := 0; i < count-1; i++ {
+	for i := 0; i < knots-1; i++ {
 		nextKnot := newKnot(i+1, startingPosition, curr, nil)
 		curr.next = nextKnot
 		curr = nextKnot
@@ -148,8 +149,8 @@ func main() {
 	}
 	lines := strings.Split(string(f), "\n")
 
-	head1 := prepare(2, Position{15, 11})
-	head2 := prepare(10, Position{15, 11})
+	head1 := prepare(2)
+	head2 := prepare(10)
 
 	tail1visited := make(map[Position]bool)
 	tail2visited := make(map[Position]bool)
