@@ -15,7 +15,7 @@ var adjacentPositions = map[string][]int{
 	"left":   {0, -1},
 }
 
-func getTreeHeight(r rune) int {
+func getElevation(r rune) int {
 	if r == 'S' {
 		return int('a')
 	} else if r == 'E' {
@@ -25,27 +25,31 @@ func getTreeHeight(r rune) int {
 	}
 }
 
-type Node struct {
-	y                  int
-	x                  int
-	value              int
-	validAdjacentNodes map[string]*Node
+type Point struct {
+	y                   int
+	x                   int
+	elevation           int
+	validAdjacentPoints map[string]*Point
 }
 
-func walk(start *Node, end *Node, currentNode *Node, distances map[*Node]float64, visited map[*Node]bool) map[*Node]float64 {
-	if currentNode == end {
-		return distances
+func walk(start *Point, end *Point, currentPoint *Point, distances map[*Point]float64, visited map[*Point]bool, shortestKnownDistance int) (map[*Point]float64, bool) {
+	if shortestKnownDistance > 0 && distances[currentPoint] > float64(shortestKnownDistance) {
+		return distances, true
 	}
 
-	for _, n := range currentNode.validAdjacentNodes {
-		distanceToStart := distances[currentNode] + 1
+	if currentPoint == end {
+		return distances, false
+	}
+
+	for _, n := range currentPoint.validAdjacentPoints {
+		distanceToStart := distances[currentPoint] + 1
 		if distanceToStart < distances[n] {
 			distances[n] = distanceToStart
 		}
 	}
-	visited[currentNode] = true
+	visited[currentPoint] = true
 
-	var nextNode *Node
+	var nextNode *Point
 	for node, distance := range distances {
 		if nextNode == nil {
 			nextNode = node
@@ -54,10 +58,30 @@ func walk(start *Node, end *Node, currentNode *Node, distances map[*Node]float64
 		}
 	}
 	if nextNode == nil {
-		return distances
+		return distances, false
 	}
 
-	return walk(start, end, nextNode, distances, visited)
+	return walk(start, end, nextNode, distances, visited, shortestKnownDistance)
+}
+
+func findShortestDistanceBetweenPoints(nodes []*Point, start *Point, end *Point, shortestKnownDistance int) int {
+	visitedNodes := map[*Point]bool{}
+	nodesToDistance := map[*Point]float64{}
+
+	for _, node := range nodes {
+		visitedNodes[node] = false
+		if node == start {
+			nodesToDistance[node] = 0
+		} else {
+			nodesToDistance[node] = math.Inf(1)
+		}
+	}
+
+	distances, terminated := walk(start, end, start, nodesToDistance, visitedNodes, shortestKnownDistance)
+	if terminated {
+		return -1
+	}
+	return int(distances[end])
 }
 
 func main() {
@@ -66,52 +90,64 @@ func main() {
 		log.Fatalf("Error reading input file: %+v\n", err)
 	}
 
-	var start *Node
-	var end *Node
-	matrix := [][]*Node{}
+	var start *Point
+	var end *Point
+	part2startingPoints := []*Point{}
+	matrix := [][]*Point{}
 
 	for y, row := range strings.Split(string(f), "\n") {
-		matrix = append(matrix, []*Node{})
+		matrix = append(matrix, []*Point{})
 		for x, col := range row {
-			node := &Node{
-				y:                  y,
-				x:                  x,
-				value:              getTreeHeight(col),
-				validAdjacentNodes: make(map[string]*Node),
+			e := getElevation(col)
+			node := &Point{
+				y:                   y,
+				x:                   x,
+				elevation:           e,
+				validAdjacentPoints: make(map[string]*Point),
 			}
+
 			if col == 'S' {
 				start = node
 			} else if col == 'E' {
 				end = node
 			}
 
+			if e == int('a') {
+				part2startingPoints = append(part2startingPoints, node)
+			}
+
 			matrix[y] = append(matrix[y], node)
 		}
 	}
 
-	visitedNodes := map[*Node]bool{}
-	nodesToDistance := map[*Node]float64{}
+	points := []*Point{}
 	for y, row := range matrix {
-		for x, node := range row {
+		for x, point := range row {
 			for d, offset := range adjacentPositions {
 				adjacentY := y + offset[0]
 				adjacentX := x + offset[1]
 
 				if adjacentY >= 0 && adjacentY < len(matrix) && adjacentX >= 0 && adjacentX < len(matrix[y]) {
 					adjacentNode := matrix[adjacentY][adjacentX]
-					if adjacentNode.value <= node.value+1 {
-						node.validAdjacentNodes[d] = adjacentNode
+					if adjacentNode.elevation <= point.elevation+1 {
+						point.validAdjacentPoints[d] = adjacentNode
 					}
 				}
 			}
-			visitedNodes[node] = false
-			nodesToDistance[node] = math.Inf(1)
+
+			points = append(points, point)
 		}
 	}
 
-	nodesToDistance[start] = 0
+	part1 := findShortestDistanceBetweenPoints(points, start, end, -1)
+	fmt.Printf("Part 1: %d\n", part1)
 
-	distances := walk(start, end, start, nodesToDistance, visitedNodes)
-
-	fmt.Println(distances[end])
+	part2 := -1
+	for _, pt2start := range part2startingPoints {
+		pt2distance := findShortestDistanceBetweenPoints(points, pt2start, end, part1)
+		if pt2distance > 0 && (part2 < 0 || pt2distance < part2) {
+			part2 = pt2distance
+		}
+	}
+	fmt.Printf("Part 2: %d\n", part2)
 }
